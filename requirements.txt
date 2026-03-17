@@ -1,6 +1,6 @@
 flask
 flask-mysqldb
 flask-bcrypt
-torch
+torch==2.0.1
 transformers
 gunicorn
