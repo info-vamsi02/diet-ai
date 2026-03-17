@@ -139,9 +139,7 @@ def index():
             print("FORM ERROR:", e)
 
     return render_template("index.html", diet=diet, guide=guide, user=session["user"])
-@app.route("/test")
-def test():
-    return "App working"
+
 if __name__ == "__main__":
     with app.app_context():
         init_db()
