@@ -19,7 +19,7 @@ def generate_meal_plan(guide):
 def predict_diet(age, bmi, diseases, activity, gender,
                  personalized=None, include_foods=None, exclude_foods=None):
 
-    bmi = float(bmi)
+    bmi = float(bmi or 0)
 
     if bmi > 25:
         diet = "Low_Carb"

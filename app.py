@@ -1,16 +1,16 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, session, flash, g
+from flask import Flask, render_template, request, redirect, session, flash,  g
 from flask_bcrypt import Bcrypt
 from predict import predict_diet
 
 app = Flask(__name__)
 app.secret_key = "secret123"
-app.config['SESSION_PERMANENT'] =False
+
 
 bcrypt = Bcrypt(app)
 
-DATABASE = os.path.join(os.getcwd(), "users.db")
+DATABASE = "users.db"
 
 def get_db():
     if 'db' not in g:
