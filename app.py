@@ -4,6 +4,10 @@ from flask import Flask, render_template, request, redirect, session, flash,  g
 from flask_bcrypt import Bcrypt
 from predict import predict_diet
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(BASE_DIR, "users.db")
+
+conn = sqlite3.connect(db_path)
 app = Flask(__name__)
 app.secret_key = "secret123"
 
@@ -11,7 +15,17 @@ app.secret_key = "secret123"
 bcrypt = Bcrypt(app)
 
 DATABASE = "users.db"
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
 
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    password TEXT
+)
+""")
+conn.commit()
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(DATABASE)
