@@ -16,8 +16,7 @@ def query(payload):
     response = requests.post(API_URL, headers=headers, json=payload)
     return response.json()
 
-# ---------------- LOAD LABEL ENCODER ----------------
-le = pickle.load(open("saved_model/label_encoder.pkl", "rb"))
+
 
 # ---------------- DIET GUIDES ----------------
 diet_guides = {
