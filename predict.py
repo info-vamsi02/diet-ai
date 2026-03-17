@@ -1,92 +1,10 @@
-import requests
-import pickle
 import random
-import os
 
-# ---------------- HUGGINGFACE API ----------------
-API_URL = "https://api-inference.huggingface.co/models/distilbert-base-uncased"
-
-HF_TOKEN = os.environ.get("HF_TOKEN")
-
-headers = {
-    "Authorization": f"Bearer {HF_TOKEN}"
-}
-
-def query(payload):
-    response = requests.post(API_URL, headers=headers, json=payload)
-    return response.json()
-
-
-
-# ---------------- DIET GUIDES ----------------
-diet_guides = {
-
-"Balanced":{
-"calories":"2000 kcal/day",
-"protein":"70 g/day",
-"carbohydrates":"250 g/day",
-"fat":"60 g/day",
-"vitamins":"Vitamin A, C, D, Iron",
-
-"recommended_foods":[
-"Brown rice","Oats","Eggs","Milk","Fruits",
-"Vegetables","Almonds"
-],
-
-"foods_to_avoid":[
-"Junk food","Sugary drinks"
-]
-},
-
-"Low_Carb":{
-"calories":"1500 kcal/day",
-"protein":"90 g/day",
-"carbohydrates":"80 g/day",
-"fat":"70 g/day",
-"vitamins":"Vitamin B, D",
-
-"recommended_foods":[
-"Eggs","Chicken","Paneer","Tofu",
-"Leafy vegetables","Nuts"
-],
-
-"foods_to_avoid":[
-"Rice","Bread","Pasta","Sugar"
-]
-},
-
-"Low_Sodium":{
-"calories":"1800 kcal/day",
-"protein":"75 g/day",
-"carbohydrates":"220 g/day",
-"fat":"55 g/day",
-"vitamins":"Vitamin C, Magnesium",
-
-"recommended_foods":[
-"Fruits","Vegetables","Oats",
-"Brown rice","Lentils"
-],
-
-"foods_to_avoid":[
-"Salt","Pickles","Processed food"
-]
-}
-
-}
-
-# -------- AI MEAL PLANNER --------
 def generate_meal_plan(guide):
-
     foods = guide["recommended_foods"]
-    avoid = guide["foods_to_avoid"]
-
-    safe_foods = [f for f in foods if f not in avoid]
-
-    if len(safe_foods) < 3:
-        safe_foods = foods
 
     def meal():
-        return random.choice(safe_foods)
+        return random.choice(foods)
 
     return {
         "Monday": f"{meal()} + {meal()} + {meal()}",
@@ -98,67 +16,30 @@ def generate_meal_plan(guide):
         "Sunday": f"{meal()} + {meal()} + {meal()}"
     }
 
-# ---------------- MAIN FUNCTION ----------------
-def predict_diet(age, bmi, diseases, activity, gender, personalized=None,
-                 include_foods=None, exclude_foods=None):
+def predict_diet(age, bmi, diseases, activity, gender,
+                 personalized=None, include_foods=None, exclude_foods=None):
 
-    text = f"Age {age}, Gender {gender}, BMI {bmi}, Diseases {','.join(diseases)}, Activity {activity}"
+    bmi = float(bmi)
 
-    # 🔥 CALL HUGGINGFACE API
-    try:
-        result = query({"inputs": text})
-
-        # fallback prediction
-        pred_index = 0
-
-        if isinstance(result, list):
-            pred_index = 0
-
-        diet = le.inverse_transform([pred_index])[0]
-
-    except:
-        # fallback if API fails
+    if bmi > 25:
+        diet = "Low_Carb"
+    elif "Hypertension" in diseases:
+        diet = "Low_Sodium"
+    else:
         diet = "Balanced"
 
-    guide = diet_guides[diet].copy()
-    guide["recommended_foods"] = guide["recommended_foods"].copy()
-    guide["foods_to_avoid"] = guide["foods_to_avoid"].copy()
+    guide = {
+        "calories": "2000 kcal",
+        "protein": "70g",
+        "carbohydrates": "250g",
+        "fat": "60g",
+        "vitamins": "A, B, C",
+        "recommended_foods": ["Rice","Fruits","Vegetables","Eggs"],
+        "foods_to_avoid": ["Junk food","Sugar"]
+    }
 
-    # ---------------- PERSONALIZATION ----------------
     if personalized == "yes":
-
-        bmi = float(bmi)
-
-        # Gender
-        if gender == "Male":
-            guide["calories"] = "2200–2800 kcal/day"
-        else:
-            guide["calories"] = "1600–2200 kcal/day"
-
-        # BMI
-        if bmi > 25:
-            guide["calories"] = "1200–1500 kcal/day"
-
-        # Diseases
-        for d in diseases:
-            if d == "Diabetes":
-                guide["foods_to_avoid"] += ["Sugar"]
-            elif d == "Hypertension":
-                guide["foods_to_avoid"] += ["Salt"]
-
-        # User preferences
-        if include_foods:
-            guide["recommended_foods"] += [f.strip() for f in include_foods.split(",")]
-
-        if exclude_foods:
-            guide["foods_to_avoid"] += [f.strip() for f in exclude_foods.split(",")]
-
-        # Remove duplicates
-        guide["recommended_foods"] = list(set(guide["recommended_foods"]))
-        guide["foods_to_avoid"] = list(set(guide["foods_to_avoid"]))
-
-        # AI Meal Plan
         guide["weekly_plan"] = generate_meal_plan(guide)
-        guide["note"] = "AI Personalized Diet Plan"
+        guide["note"] = "AI Personalized Plan"
 
     return diet, guide

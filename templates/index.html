@@ -68,26 +68,9 @@
 <input type="checkbox" name="disease" value="PCOS"> PCOS<br>
 <input type="checkbox" name="disease" value="Thyroid"> Thyroid<br>
 <input type="checkbox" name="disease" value="Anemia"> Anemia<br>
-
+<input type="checkbox" name="disease" value="None"> None<br>
 </div>
-<script>
-const noneCheck = document.getElementById("noneCheck");
-const diseaseChecks = document.querySelectorAll(".diseaseCheck");
 
-noneCheck.addEventListener("change", () => {
-    if (noneCheck.checked) {
-        diseaseChecks.forEach(cb => cb.checked = false);
-    }
-});
-
-diseaseChecks.forEach(cb => {
-    cb.addEventListener("change", () => {
-        if (cb.checked) {
-            noneCheck.checked = false;
-        }
-    });
-});
-</script>
 <div class="col-md-6 mb-3">
 <label>Activity Level</label>
 <select class="form-select" name="activity">

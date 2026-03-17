@@ -9,7 +9,6 @@ app.secret_key = "secret123"
 
 bcrypt = Bcrypt(app)
 
-# ---------------- SQLITE DB ----------------
 DATABASE = "users.db"
 
 def get_db():
@@ -24,7 +23,6 @@ def close_db(error):
     if db is not None:
         db.close()
 
-# CREATE TABLE (auto create)
 def init_db():
     db = get_db()
     db.execute("""
@@ -37,7 +35,7 @@ def init_db():
     """)
     db.commit()
 
-# ---------------- REGISTER ----------------
+# REGISTER
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
@@ -47,7 +45,7 @@ def register():
         password = request.form.get("password")
 
         if not name or not email or not password:
-            flash("All fields are required")
+            flash("All fields required")
             return render_template("register.html")
 
         password = bcrypt.generate_password_hash(password).decode("utf-8")
@@ -58,7 +56,6 @@ def register():
             db.execute("INSERT INTO users(name,email,password) VALUES(?,?,?)",
                        (name,email,password))
             db.commit()
-
             flash("Registered successfully")
             return redirect("/login")
 
@@ -67,7 +64,7 @@ def register():
 
     return render_template("register.html")
 
-# ---------------- LOGIN ----------------
+# LOGIN
 @app.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
@@ -87,13 +84,13 @@ def login():
 
     return render_template("login.html")
 
-# ---------------- LOGOUT ----------------
+# LOGOUT
 @app.route("/logout")
 def logout():
     session.pop("user", None)
     return redirect("/login")
 
-# ---------------- MAIN PAGE ----------------
+# MAIN PAGE
 @app.route("/", methods=["GET","POST"])
 def index():
 
@@ -123,15 +120,14 @@ def index():
             )
 
         except Exception as e:
-            print("ERROR:", e)   # 🔥 helps debug in Render logs
-            flash("Something went wrong. Please try again.")
+            print("ERROR:", e)
+            flash("Something went wrong")
 
     return render_template("index.html", diet=diet, guide=guide, user=session["user"])
 
-# ---------------- RUN ----------------
 if __name__ == "__main__":
     with app.app_context():
-        init_db()   # create DB automatically
+        init_db()
 
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
