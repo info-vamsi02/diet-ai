@@ -1,11 +1,11 @@
 import torch
+torch.set_num_threads(1)
 import pickle
 import random
 from transformers import BertTokenizer, BertForSequenceClassification
-from transformers import BertTokenizer, BertForSequenceClassification
 
-tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-model = BertForSequenceClassification.from_pretrained("bert-base-uncased")
+tokenizer = BertTokenizer.from_pretrained("distilbert-base-uncased")
+model = BertForSequenceClassification.from_pretrained("distilbert-base-uncased")
 
 
 # LOAD LABEL ENCODER
