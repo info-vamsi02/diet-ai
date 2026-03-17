@@ -42,9 +42,15 @@ def init_db():
 def register():
     if request.method == "POST":
 
-        name = request.form["name"]
-        email = request.form["email"]
-        password = bcrypt.generate_password_hash(request.form["password"]).decode("utf-8")
+        name = request.form.get("name")
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if not name or not email or not password:
+            flash("All fields are required")
+            return render_template("register.html")
+
+        password = bcrypt.generate_password_hash(password).decode("utf-8")
 
         db = get_db()
 
@@ -56,7 +62,7 @@ def register():
             flash("Registered successfully")
             return redirect("/login")
 
-        except:
+        except sqlite3.IntegrityError:
             flash("Email already exists")
 
     return render_template("register.html")
@@ -66,8 +72,8 @@ def register():
 def login():
     if request.method == "POST":
 
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.form.get("email")
+        password = request.form.get("password")
 
         db = get_db()
         user = db.execute("SELECT * FROM users WHERE email=?",
@@ -98,23 +104,27 @@ def index():
     guide = None
 
     if request.method == "POST":
+        try:
+            age = request.form.get("age")
+            bmi = request.form.get("bmi")
+            gender = request.form.get("gender")
+            diseases = request.form.getlist("disease")
+            activity = request.form.get("activity")
 
-        age = request.form["age"]
-        bmi = request.form["bmi"]
-        gender = request.form["gender"]
-        diseases = request.form.getlist("disease")
-        activity = request.form["activity"]
+            action = request.form.get("action")
+            personalized = "yes" if action == "personalized" else None
 
-        action = request.form.get("action")
-        personalized = "yes" if action == "personalized" else None
+            include_foods = request.form.get("include_foods")
+            exclude_foods = request.form.get("exclude_foods")
 
-        include_foods = request.form.get("include_foods")
-        exclude_foods = request.form.get("exclude_foods")
+            diet, guide = predict_diet(
+                age, bmi, diseases, activity, gender,
+                personalized, include_foods, exclude_foods
+            )
 
-        diet, guide = predict_diet(
-            age, bmi, diseases, activity, gender,
-            personalized, include_foods, exclude_foods
-        )
+        except Exception as e:
+            print("ERROR:", e)   # 🔥 helps debug in Render logs
+            flash("Something went wrong. Please try again.")
 
     return render_template("index.html", diet=diet, guide=guide, user=session["user"])
 
