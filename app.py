@@ -9,24 +9,25 @@ app.secret_key = "secret123"
 
 bcrypt = Bcrypt(app)
 
-# ✅ Correct DB path
+# ✅ Correct DB path (important for Render)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.path.join(BASE_DIR, "users.db")
 
-# ✅ DB connection
+# ✅ Get DB connection
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(DATABASE)
         g.db.row_factory = sqlite3.Row
     return g.db
 
+# ✅ Close DB after request
 @app.teardown_appcontext
 def close_db(error):
     db = g.pop('db', None)
     if db is not None:
         db.close()
 
-# ✅ Single correct table
+# ✅ Create table (CORRECT STRUCTURE)
 def init_db():
     db = get_db()
     db.execute("""
@@ -39,7 +40,7 @@ def init_db():
     """)
     db.commit()
 
-# REGISTER
+# ---------------- REGISTER ----------------
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
@@ -57,8 +58,10 @@ def register():
         db = get_db()
 
         try:
-            db.execute("INSERT INTO users(name,email,password) VALUES(?,?,?)",
-                       (name,email,password))
+            db.execute(
+                "INSERT INTO users(name,email,password) VALUES(?,?,?)",
+                (name, email, password)
+            )
             db.commit()
             flash("Registered successfully")
             return redirect("/login")
@@ -68,7 +71,7 @@ def register():
 
     return render_template("register.html")
 
-# LOGIN
+# ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
@@ -77,8 +80,10 @@ def login():
         password = request.form.get("password")
 
         db = get_db()
-        user = db.execute("SELECT * FROM users WHERE email=?",
-                          (email,)).fetchone()
+        user = db.execute(
+            "SELECT * FROM users WHERE email=?",
+            (email,)
+        ).fetchone()
 
         if user and bcrypt.check_password_hash(user["password"], password):
             session["user"] = user["name"]
@@ -88,13 +93,13 @@ def login():
 
     return render_template("login.html")
 
-# LOGOUT
+# ---------------- LOGOUT ----------------
 @app.route("/logout")
 def logout():
     session.pop("user", None)
     return redirect("/login")
 
-# HOME
+# ---------------- HOME ----------------
 @app.route("/", methods=["GET","POST"])
 def index():
 
@@ -126,12 +131,17 @@ def index():
         except Exception as e:
             print("ERROR:", e)
 
-    return render_template("index.html", diet=diet, guide=guide, user=session["user"])
+    return render_template(
+        "index.html",
+        diet=diet,
+        guide=guide,
+        user=session["user"]
+    )
 
-# START APP
+# ---------------- START APP ----------------
 if __name__ == "__main__":
     with app.app_context():
-        init_db()
+        init_db()   # ✅ creates correct table
 
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
