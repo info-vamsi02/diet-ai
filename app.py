@@ -1,66 +1,93 @@
 import os
-PORT = int(os.environ.get("PORT", 5000))
-from flask import Flask, render_template, request, redirect, session, flash
-from flask_mysqldb import MySQL
+import sqlite3
+from flask import Flask, render_template, request, redirect, session, flash, g
 from flask_bcrypt import Bcrypt
-
 from predict import predict_diet
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# MYSQL CONFIG
-app.config['MYSQL_HOST'] = os.environ.get('MYSQLHOST')
-app.config['MYSQL_USER'] = os.environ.get('MYSQLUSER')
-app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQLPASSWORD')
-app.config['MYSQL_DB'] = os.environ.get('MYSQLDATABASE')
-
-mysql = MySQL(app)
 bcrypt = Bcrypt(app)
 
-# REGISTER
+# ---------------- SQLITE DB ----------------
+DATABASE = "users.db"
+
+def get_db():
+    if 'db' not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row
+    return g.db
+
+@app.teardown_appcontext
+def close_db(error):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+# CREATE TABLE (auto create)
+def init_db():
+    db = get_db()
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS users(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            email TEXT UNIQUE,
+            password TEXT
+        )
+    """)
+    db.commit()
+
+# ---------------- REGISTER ----------------
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
+
         name = request.form["name"]
         email = request.form["email"]
         password = bcrypt.generate_password_hash(request.form["password"]).decode("utf-8")
 
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(name,email,password) VALUES(%s,%s,%s)", (name,email,password))
-        mysql.connection.commit()
+        db = get_db()
 
-        flash("Registered successfully")
-        return redirect("/login")
+        try:
+            db.execute("INSERT INTO users(name,email,password) VALUES(?,?,?)",
+                       (name,email,password))
+            db.commit()
+
+            flash("Registered successfully")
+            return redirect("/login")
+
+        except:
+            flash("Email already exists")
 
     return render_template("register.html")
 
-# LOGIN
+# ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
+
         email = request.form["email"]
         password = request.form["password"]
 
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT * FROM users WHERE email=%s", (email,))
-        user = cur.fetchone()
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE email=?",
+                          (email,)).fetchone()
 
-        if user and bcrypt.check_password_hash(user[3], password):
-            session["user"] = user[1]
+        if user and bcrypt.check_password_hash(user["password"], password):
+            session["user"] = user["name"]
             return redirect("/")
         else:
             flash("Invalid credentials")
 
     return render_template("login.html")
 
-# LOGOUT
+# ---------------- LOGOUT ----------------
 @app.route("/logout")
 def logout():
     session.pop("user", None)
     return redirect("/login")
 
-# MAIN PAGE
+# ---------------- MAIN PAGE ----------------
 @app.route("/", methods=["GET","POST"])
 def index():
 
@@ -85,13 +112,16 @@ def index():
         exclude_foods = request.form.get("exclude_foods")
 
         diet, guide = predict_diet(
-            age, bmi, diseases, activity, gender, personalized,
-            include_foods, exclude_foods
+            age, bmi, diseases, activity, gender,
+            personalized, include_foods, exclude_foods
         )
 
     return render_template("index.html", diet=diet, guide=guide, user=session["user"])
 
-
+# ---------------- RUN ----------------
 if __name__ == "__main__":
+    with app.app_context():
+        init_db()   # create DB automatically
+
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
