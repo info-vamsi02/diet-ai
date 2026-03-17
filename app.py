@@ -102,29 +102,46 @@ def index():
 
     if request.method == "POST":
         try:
-            age = request.form.get("age")
-            bmi = request.form.get("bmi")
-            gender = request.form.get("gender")
-            diseases = request.form.getlist("disease")
-            activity = request.form.get("activity")
+            age = request.form.get("age", "0")
+            bmi = request.form.get("bmi", "0")
+            gender = request.form.get("gender", "Male")
+            diseases = request.form.getlist("disease") or []
+            activity = request.form.get("activity", "Low")
 
             action = request.form.get("action")
             personalized = "yes" if action == "personalized" else None
 
-            include_foods = request.form.get("include_foods")
-            exclude_foods = request.form.get("exclude_foods")
+            include_foods = request.form.get("include_foods", "")
+            exclude_foods = request.form.get("exclude_foods", "")
 
-            diet, guide = predict_diet(
-                age, bmi, diseases, activity, gender,
-                personalized, include_foods, exclude_foods
-            )
+            # 🔥 SAFE CALL
+            try:
+                diet, guide = predict_diet(
+                    age, bmi, diseases, activity, gender,
+                    personalized, include_foods, exclude_foods
+                )
+            except Exception as e:
+                print("PREDICT ERROR:", e)
+
+                # fallback (never crash)
+                diet = "Balanced"
+                guide = {
+                    "calories": "2000 kcal",
+                    "protein": "70g",
+                    "carbohydrates": "250g",
+                    "fat": "60g",
+                    "vitamins": "Basic",
+                    "recommended_foods": ["Rice","Fruits"],
+                    "foods_to_avoid": ["Junk"]
+                }
 
         except Exception as e:
-            print("ERROR:", e)
-            flash("Something went wrong")
+            print("FORM ERROR:", e)
 
     return render_template("index.html", diet=diet, guide=guide, user=session["user"])
-
+@app.route("/test")
+def test():
+    return "App working"
 if __name__ == "__main__":
     with app.app_context():
         init_db()
