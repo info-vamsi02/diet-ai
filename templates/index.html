@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<title>AI Diet Assistant</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-primary px-3">
+<span class="navbar-brand">AI Diet Assistant</span>
+
+<div>
+<span class="text-white me-3">Welcome, {{user}}</span>
+<a href="/logout" class="btn btn-light btn-sm">Logout</a>
+</div>
+</nav>
+
+<div class="container mt-5">
+
+<div class="card p-4 shadow">
+
+<h3 class="text-center mb-4">AI Diet Recommendation</h3>
+
+<form method="POST">
+
+<!-- BASIC DETAILS -->
+<div class="row">
+
+<div class="col-md-4 mb-3">
+<label>Age</label>
+<input type="number" class="form-control" name="age" required>
+</div>
+
+<div class="col-md-4 mb-3">
+<label>BMI</label>
+<input type="number" step="0.1" class="form-control" name="bmi" required>
+</div>
+
+<div class="col-md-4 mb-3">
+<label>Gender</label>
+<select class="form-select" name="gender" required>
+<option value="">Select</option>
+<option>Male</option>
+<option>Female</option>
+</select>
+</div>
+
+</div>
+
+<!-- HEALTH -->
+<div class="row">
+
+<div class="col-md-6 mb-3">
+<label>Disease Conditions</label><br>
+
+<input type="checkbox" name="disease" value="Diabetes"> Diabetes<br>
+<input type="checkbox" name="disease" value="Hypertension"> Hypertension<br>
+<input type="checkbox" name="disease" value="Obesity"> Obesity<br>
+<input type="checkbox" name="disease" value="Heart Disease"> Heart Disease<br>
+<input type="checkbox" name="disease" value="Kidney Disease"> Kidney Disease<br>
+<input type="checkbox" name="disease" value="PCOS"> PCOS<br>
+<input type="checkbox" name="disease" value="Thyroid"> Thyroid<br>
+<input type="checkbox" name="disease" value="Anemia"> Anemia<br>
+
+</div>
+<script>
+const noneCheck = document.getElementById("noneCheck");
+const diseaseChecks = document.querySelectorAll(".diseaseCheck");
+
+noneCheck.addEventListener("change", () => {
+    if (noneCheck.checked) {
+        diseaseChecks.forEach(cb => cb.checked = false);
+    }
+});
+
+diseaseChecks.forEach(cb => {
+    cb.addEventListener("change", () => {
+        if (cb.checked) {
+            noneCheck.checked = false;
+        }
+    });
+});
+</script>
+<div class="col-md-6 mb-3">
+<label>Activity Level</label>
+<select class="form-select" name="activity">
+<option>Low</option>
+<option>Moderate</option>
+<option>High</option>
+</select>
+</div>
+
+</div>
+
+<!-- PERSONAL INPUTS -->
+<div class="mt-3">
+<h5>Food Preferences (Optional)</h5>
+
+<input type="text" class="form-control mb-2" name="include_foods"
+placeholder="Foods you LIKE (e.g. rice, fruits)">
+
+<input type="text" class="form-control mb-2" name="exclude_foods"
+placeholder="Foods to AVOID (e.g. sugar, junk food)">
+</div>
+
+<!-- BUTTONS -->
+<div class="d-flex gap-2 mt-3">
+
+<button type="submit" name="action" value="basic" class="btn btn-primary w-50">
+Basic Plan
+</button>
+
+<button type="submit" name="action" value="personalized" class="btn btn-success w-50">
+Personalized Plan
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+<!-- RESULTS -->
+
+{% if diet %}
+
+<div class="text-center mt-5">
+
+<h4 class="text-primary mb-2">Recommended Diet: {{diet}}</h4>
+
+{% if guide.note %}
+<p class="text-success"><b>{{guide.note}}</b></p>
+{% endif %}
+
+<div class="row g-4 justify-content-center">
+
+<!-- Nutrition -->
+<div class="col-md-4">
+<div class="flip-card">
+<div class="flip-card-inner">
+
+<div class="flip-card-front bg-primary text-white">
+<h5>Nutrition</h5>
+<p>Hover</p>
+</div>
+
+<div class="flip-card-back">
+<ul>
+<li><b>Calories:</b> {{guide.calories}}</li>
+<li><b>Protein:</b> {{guide.protein}}</li>
+<li><b>Carbs:</b> {{guide.carbohydrates}}</li>
+<li><b>Fat:</b> {{guide.fat}}</li>
+<li><b>Vitamins:</b> {{guide.vitamins}}</li>
+</ul>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- Recommended -->
+<div class="col-md-4">
+<div class="flip-card">
+<div class="flip-card-inner">
+
+<div class="flip-card-front bg-success text-white">
+<h5>Recommended Foods</h5>
+<p>Hover</p>
+</div>
+
+<div class="flip-card-back">
+<ul>
+{% for f in guide.recommended_foods %}
+<li>{{f}}</li>
+{% endfor %}
+</ul>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- Avoid -->
+<div class="col-md-4">
+<div class="flip-card">
+<div class="flip-card-inner">
+
+<div class="flip-card-front bg-danger text-white">
+<h5>Foods to Avoid</h5>
+<p>Hover</p>
+</div>
+
+<div class="flip-card-back">
+<ul>
+{% for f in guide.foods_to_avoid %}
+<li>{{f}}</li>
+{% endfor %}
+</ul>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- AI WEEKLY MEAL PLAN -->
+{% if guide.weekly_plan %}
+
+<div class="mt-5">
+<h4 class="text-success text-center">AI Weekly Meal Plan</h4>
+
+<div class="row">
+{% for day, meals in guide.weekly_plan.items() %}
+
+<div class="col-md-4 mb-3">
+<div class="card p-3 shadow">
+<h5 class="text-primary">{{day}}</h5>
+<p>{{meals}}</p>
+</div>
+</div>
+
+{% endfor %}
+</div>
+
+</div>
+
+{% endif %}
+
+</div>
+
+{% endif %}
+
+</div>
+
+</body>
+</html>
