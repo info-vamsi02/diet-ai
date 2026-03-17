@@ -3,7 +3,6 @@ PORT = int(os.environ.get("PORT", 5000))
 from flask import Flask, render_template, request, redirect, session, flash
 from flask_mysqldb import MySQL
 from flask_bcrypt import Bcrypt
-from torch._dynamo.polyfills import os
 
 from predict import predict_diet
 
