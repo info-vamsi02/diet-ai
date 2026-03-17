@@ -2,10 +2,11 @@ import torch
 import pickle
 import random
 from transformers import BertTokenizer, BertForSequenceClassification
+from transformers import BertTokenizer, BertForSequenceClassification
 
-# LOAD MODEL
-tokenizer = BertTokenizer.from_pretrained("saved_model")
-model = BertForSequenceClassification.from_pretrained("saved_model")
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+model = BertForSequenceClassification.from_pretrained("bert-base-uncased")
+
 
 # LOAD LABEL ENCODER
 le = pickle.load(open("saved_model/label_encoder.pkl","rb"))
