@@ -6,10 +6,11 @@ from predict import predict_diet
 
 app = Flask(__name__)
 app.secret_key = "secret123"
+app.config['SESSION_PERMANENT'] =False
 
 bcrypt = Bcrypt(app)
 
-DATABASE = "users.db"
+DATABASE = os.path.join(os.getcwd(), "users.db")
 
 def get_db():
     if 'db' not in g:
