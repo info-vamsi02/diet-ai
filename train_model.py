@@ -6,10 +6,14 @@ import pickle
 from sklearn.preprocessing import LabelEncoder
 from transformers import BertTokenizer, BertForSequenceClassification, Trainer, TrainingArguments
 
+from app import BASE_DIR
+
 # create folder
 os.makedirs("saved_model", exist_ok=True)
 
 # load dataset
+csv_path = os.path.join(BASE_DIR, "diet_recommendations_dataset.csv")
+
 data = pd.read_csv("diet_recommendations_dataset.csv")
 
 # ---------------- FIX INPUT TEXT ----------------
