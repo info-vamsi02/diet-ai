@@ -1,6 +1,5 @@
 flask
 flask-mysqldb
 flask-bcrypt
-transformers
+requests
 gunicorn
-torch

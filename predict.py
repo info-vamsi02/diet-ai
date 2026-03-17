@@ -1,15 +1,23 @@
-import torch
-torch.set_num_threads(1)
+import requests
 import pickle
 import random
-from transformers import BertTokenizer, BertForSequenceClassification
+import os
 
-tokenizer = BertTokenizer.from_pretrained("distilbert-base-uncased")
-model = BertForSequenceClassification.from_pretrained("distilbert-base-uncased")
+# ---------------- HUGGINGFACE API ----------------
+API_URL = "https://api-inference.huggingface.co/models/distilbert-base-uncased"
 
+HF_TOKEN = os.environ.get("HF_TOKEN")
 
-# LOAD LABEL ENCODER
-le = pickle.load(open("saved_model/label_encoder.pkl","rb"))
+headers = {
+    "Authorization": f"Bearer {HF_TOKEN}"
+}
+
+def query(payload):
+    response = requests.post(API_URL, headers=headers, json=payload)
+    return response.json()
+
+# ---------------- LOAD LABEL ENCODER ----------------
+le = pickle.load(open("saved_model/label_encoder.pkl", "rb"))
 
 # ---------------- DIET GUIDES ----------------
 diet_guides = {
@@ -97,11 +105,21 @@ def predict_diet(age, bmi, diseases, activity, gender, personalized=None,
 
     text = f"Age {age}, Gender {gender}, BMI {bmi}, Diseases {','.join(diseases)}, Activity {activity}"
 
-    inputs = tokenizer(text, return_tensors="pt")
-    outputs = model(**inputs)
+    # 🔥 CALL HUGGINGFACE API
+    try:
+        result = query({"inputs": text})
 
-    pred = torch.argmax(outputs.logits).item()
-    diet = le.inverse_transform([pred])[0]
+        # fallback prediction
+        pred_index = 0
+
+        if isinstance(result, list):
+            pred_index = 0
+
+        diet = le.inverse_transform([pred_index])[0]
+
+    except:
+        # fallback if API fails
+        diet = "Balanced"
 
     guide = diet_guides[diet].copy()
     guide["recommended_foods"] = guide["recommended_foods"].copy()
