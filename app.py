@@ -1,31 +1,19 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, session, flash,  g
+from flask import Flask, render_template, request, redirect, session, flash, g
 from flask_bcrypt import Bcrypt
 from predict import predict_diet
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(BASE_DIR, "users.db")
-
-conn = sqlite3.connect(db_path)
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-
 bcrypt = Bcrypt(app)
 
-DATABASE = "users.db"
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
+# ✅ Correct DB path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, "users.db")
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
-    password TEXT
-)
-""")
-conn.commit()
+# ✅ DB connection
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(DATABASE)
@@ -38,6 +26,7 @@ def close_db(error):
     if db is not None:
         db.close()
 
+# ✅ Single correct table
 def init_db():
     db = get_db()
     db.execute("""
@@ -105,7 +94,7 @@ def logout():
     session.pop("user", None)
     return redirect("/login")
 
-# MAIN PAGE
+# HOME
 @app.route("/", methods=["GET","POST"])
 def index():
 
@@ -129,32 +118,17 @@ def index():
             include_foods = request.form.get("include_foods", "")
             exclude_foods = request.form.get("exclude_foods", "")
 
-            # 🔥 SAFE CALL
-            try:
-                diet, guide = predict_diet(
-                    age, bmi, diseases, activity, gender,
-                    personalized, include_foods, exclude_foods
-                )
-            except Exception as e:
-                print("PREDICT ERROR:", e)
-
-                # fallback (never crash)
-                diet = "Balanced"
-                guide = {
-                    "calories": "2000 kcal",
-                    "protein": "70g",
-                    "carbohydrates": "250g",
-                    "fat": "60g",
-                    "vitamins": "Basic",
-                    "recommended_foods": ["Rice","Fruits"],
-                    "foods_to_avoid": ["Junk"]
-                }
+            diet, guide = predict_diet(
+                age, bmi, diseases, activity, gender,
+                personalized, include_foods, exclude_foods
+            )
 
         except Exception as e:
-            print("FORM ERROR:", e)
+            print("ERROR:", e)
 
     return render_template("index.html", diet=diet, guide=guide, user=session["user"])
 
+# START APP
 if __name__ == "__main__":
     with app.app_context():
         init_db()
